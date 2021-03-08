@@ -289,7 +289,11 @@ class RecordStore(object):
 
     def store_recordmap(self, recordmap):
         for table, records in recordmap.items():
+            if not isinstance(records, dict):
+                continue
             for id, record in records.items():
+                if not isinstance(record, dict):
+                    continue
                 self._update_record(
                     table, id, value=record.get("value"), role=record.get("role")
                 )
@@ -301,18 +305,20 @@ class RecordStore(object):
         search="",
         type="table",
         aggregate=[],
-        filter=[],
-        filter_operator="and",
+        aggregations=[],
+        filter={},
         sort=[],
         calendar_by="",
         group_by="",
     ):
 
+        assert not (
+            aggregate and aggregations
+        ), "Use only one of `aggregate` or `aggregations` (old vs new format)"
+
         # convert singletons into lists if needed
         if isinstance(aggregate, dict):
             aggregate = [aggregate]
-        if isinstance(filter, dict):
-            filter = [filter]
         if isinstance(sort, dict):
             sort = [sort]
 
@@ -322,15 +328,15 @@ class RecordStore(object):
             "loader": {
                 "limit": 10000,
                 "loadContentCover": True,
-                "query": search,
+                "searchQuery": search,
                 "userLocale": "en",
                 "userTimeZone": str(get_localzone()),
                 "type": type,
             },
             "query": {
                 "aggregate": aggregate,
+                "aggregations": aggregations,
                 "filter": filter,
-                "filter_operator": filter_operator,
                 "sort": sort,
             },
         }
